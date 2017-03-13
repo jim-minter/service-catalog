@@ -44,6 +44,7 @@ func SendRequest(c *http.Client, method string, url string, object interface{}) 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("X-Broker-Api-Version", "2.11")
 
 	resp, err := c.Do(req)
 	if err != nil {

@@ -18,6 +18,7 @@ package openservicebroker
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,7 +95,8 @@ func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 		username: username,
 		password: password,
 		client: &http.Client{
-			Timeout: httpTimeoutSeconds * time.Second,
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+			Timeout:   httpTimeoutSeconds * time.Second,
 		},
 	}
 }
@@ -106,6 +108,8 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("X-Broker-Api-Version", "2.11")
 
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
@@ -126,6 +130,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
+	req.AcceptsIncomplete = true
 	resp, err := util.SendRequest(c.client, http.MethodPut, serviceInstanceURL, req)
 	if err != nil {
 		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
@@ -215,6 +220,8 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 		return nil, err
 	}
 
+	createHTTPReq.Header.Add("X-Broker-Api-Version", "2.11")
+
 	glog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
@@ -250,6 +257,8 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
+
+	deleteHTTPReq.Header.Add("X-Broker-Api-Version", "2.11")
 
 	glog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.client.Do(deleteHTTPReq)

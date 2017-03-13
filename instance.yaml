@@ -1,0 +1,10 @@
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  name: test
+spec:
+  serviceClassName: ruby-helloworld-sample
+  planName: default
+  parameters:
+    template.openshift.io/namespace: demo
+    template.openshift.io/requester-username: demo
